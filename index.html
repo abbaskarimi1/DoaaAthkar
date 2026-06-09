@@ -23,7 +23,7 @@
                 --text-color: #e1e1e6;
                 --primary-color: #2ec4b6;
                 --accent-color: #3a86ff;
-                --next-prayer-color: #f12711; /* لون مميز في الوضع الداكن */
+                --next-prayer-color: #f12711; 
                 --shadow: 0 4px 15px rgba(0,0,0,0.3);
             }
         }
@@ -60,6 +60,12 @@
         .time-display {
             font-size: 1.2rem;
             opacity: 0.8;
+        }
+
+        .location-display {
+            font-size: 0.9rem;
+            margin-top: 5px;
+            color: var(--accent-color);
         }
 
         .card {
@@ -216,37 +222,40 @@
     <header>
         <h1>مذكّري اليومي</h1>
         <div class="time-display" id="current-time">--:--:--</div>
+        <div class="location-display" id="location-text">جاري تحديد الموقع لجلب المواقيت الدقيقة...</div>
     </header>
 
+    <!-- مواقيت الصلاة -->
     <section class="card">
         <div class="card-title">
-            <span>مواقيت الصلاة اليومية</span>
+            <span>مواقيت الصلاة لمدينتك</span>
             <span style="font-size: 0.8rem; font-weight: normal; color: var(--next-prayer-color);">● الصلاة القادمة محددة بلون مميز</span>
         </div>
         <div class="prayer-grid" id="prayer-timings">
-            <div class="prayer-item" id="fajr" data-time="04:30">
+            <div class="prayer-item" id="Fajr">
                 <div class="prayer-name">الفجر</div>
-                <div class="prayer-time">04:30 ص</div>
+                <div class="prayer-time" id="time-Fajr">--:--</div>
             </div>
-            <div class="prayer-item" id="dhuhr" data-time="12:20">
+            <div class="prayer-item" id="Dhuhr">
                 <div class="prayer-name">الظهر</div>
-                <div class="prayer-time">12:20 م</div>
+                <div class="prayer-time" id="time-Dhuhr">--:--</div>
             </div>
-            <div class="prayer-item" id="asr" data-time="15:45">
+            <div class="prayer-item" id="Asr">
                 <div class="prayer-name">العصر</div>
-                <div class="prayer-time">03:45 م</div>
+                <div class="prayer-time" id="time-Asr">--:--</div>
             </div>
-            <div class="prayer-item" id="maghrib" data-time="18:50">
+            <div class="prayer-item" id="Maghrib">
                 <div class="prayer-name">المغرب</div>
-                <div class="prayer-time">06:50 م</div>
+                <div class="prayer-time" id="time-Maghrib">--:--</div>
             </div>
-            <div class="prayer-item" id="isha" data-time="20:20">
+            <div class="prayer-item" id="Isha">
                 <div class="prayer-name">العشاء</div>
-                <div class="prayer-time">08:20 م</div>
+                <div class="prayer-time" id="time-Isha">--:--</div>
             </div>
         </div>
     </section>
 
+    <!-- الأذكار التفاعلية -->
     <section class="card">
         <div class="card-title">
             <span>أذكار وتسابيح</span>
@@ -276,6 +285,7 @@
         </div>
     </section>
 
+    <!-- التذكير بالدعاء -->
     <section class="card">
         <div class="card-title">دعاء اليوم</div>
         <div class="dua-box">
@@ -290,50 +300,111 @@
 </footer>
 
 <script>
-    // تحديث الوقت وتحديد الصلاة القادمة تلقائياً
-    function updateTimeAndPrayers() {
+    let prayerMinutesArray = [];
+
+    // تحديث الوقت الحالي
+    function updateClock() {
         const now = new Date();
-        
-        // تحديث الساعة الرقمية في الأعلى
         const options = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true };
         document.getElementById('current-time').innerText = now.toLocaleTimeString('ar-EG', options);
+        
+        if (prayerMinutesArray.length > 0) {
+            highlightNextPrayer(now);
+        }
+    }
+    setInterval(updateClock, 1000);
 
-        // الحصول على الوقت الحالي بالساعات والدقائق للمقارنة
+    // جلب المواقيت بناءً على الموقع الجغرافي الحقيقي
+    function getPrayerTimes() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(position => {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                
+                // استدعاء الـ API الرسمي للمواقيت بناءً على إحداثيات الموقع وطريقة أم القرى التلقائية للمنطقة
+                const url = `https://api.aladhan.com/v1/timings?latitude=${lat}&longitude=${lng}&method=4`;
+                
+                fetch(url)
+                    .then(response => response.json())
+                    .then(data => {
+                        const timings = data.data.timings;
+                        const meta = data.data.meta;
+                        
+                        document.getElementById('location-text').innerText = `الموقع المستهدف: المأخوذ تلقائياً بحسب المنطقة الزمنية (${meta.timezone})`;
+                        
+                        // عرض الأوقات على الشاشة وتحويلها للمقارنة
+                        const corePrayers = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
+                        prayerMinutesArray = [];
+
+                        corePrayers.forEach(prayer => {
+                            let timeStr = timings[prayer]; // صيغة 24 ساعة مثل "15:45"
+                            
+                            // عرض الوقت بتنسيق 12 ساعة مريح للمستخدم
+                            let [hours, minutes] = timeStr.split(':');
+                            let ampm = hours >= 12 ? 'م' : 'ص';
+                            let displayHours = hours % 12 || 12;
+                            document.getElementById(`time-${prayer}`).innerText = `${displayHours}:${minutes} ${ampm}`;
+                            
+                            // حفظ الوقت بالدقائق للمقارنة التلقائية لاحقاً
+                            prayerMinutesArray.push({
+                                id: prayer,
+                                minutes: parseInt(hours) * 60 + parseInt(minutes)
+                            });
+                        });
+                        
+                        highlightNextPrayer(new Date());
+                    })
+                    .catch(() => {
+                        document.getElementById('location-text').innerText = "حدث خطأ أثناء جلب المواقيت، سيتم الاعتماد على توقيت تقريبي.";
+                        loadFallbackTimes();
+                    });
+            }, () => {
+                document.getElementById('location-text').innerText = "تم رفض إذن الموقع، تم تشغيل المواقيت الافتراضية.";
+                loadFallbackTimes();
+            });
+        } else {
+            loadFallbackTimes();
+        }
+    }
+
+    // أوقات احتياطية في حال لم يوافق المستخدم على مشاركة موقعه
+    function loadFallbackTimes() {
+        const fallback = { Fajr: "04:30", Dhuhr: "12:20", Asr: "15:45", Maghrib: "18:50", Isha: "20:20" };
+        prayerMinutesArray = [];
+        for (let p in fallback) {
+            let [h, m] = fallback[p].split(':');
+            let ampm = h >= 12 ? 'م' : 'ص';
+            let dh = h % 12 || 12;
+            document.getElementById(`time-${p}`).innerText = `${dh}:${m} ${ampm}`;
+            prayerMinutesArray.push({ id: p, minutes: parseInt(h) * 60 + parseInt(m) });
+        }
+        highlightNextPrayer(new Date());
+    }
+
+    // تمييز الصلاة القادمة بلون فريد ونبض متحرك
+    function highlightNextPrayer(now) {
         const currentMinutes = now.getHours() * 60 + now.getMinutes();
+        let nextPrayerId = 'Fajr'; // إذا انتهت صلوات اليوم فالقادمة هي الفجر
 
-        // تعريف أوقات الصلوات بالدقائق منذ بداية اليوم
-        const prayers = [
-            { id: 'fajr', minutes: 4 * 60 + 30 },    // 04:30
-            { id: 'dhuhr', minutes: 12 * 60 + 20 },  // 12:20
-            { id: 'asr', minutes: 15 * 60 + 45 },    // 15:45
-            { id: 'maghrib', minutes: 18 * 60 + 50 },// 06:50
-            { id: 'isha', minutes: 20 * 60 + 20 }    // 08:20
-        ];
-
-        let nextPrayerId = 'fajr'; // الافتراضي صلاة الفجر لليوم التالي
-
-        // البحث عن الصلاة القادمة
-        for (let i = 0; i < prayers.length; i++) {
-            if (currentMinutes < prayers[i].minutes) {
-                nextPrayerId = prayers[i].id;
+        for (let i = 0; i < prayerMinutesArray.length; i++) {
+            if (currentMinutes < prayerMinutesArray[i].minutes) {
+                nextPrayerId = prayerMinutesArray[i].id;
                 break;
             }
         }
 
-        // إزالة اللون المميز القديم وإضافته للصلاة القادمة الصحيحة
         document.querySelectorAll('.prayer-item').forEach(item => {
             item.classList.remove('next-prayer');
         });
-        
-        const nextPrayerElement = document.getElementById(nextPrayerId);
-        if (nextPrayerElement) {
-            nextPrayerElement.classList.add('next-prayer');
+
+        const nextElement = document.getElementById(nextPrayerId);
+        if (nextElement) {
+            nextElement.classList.add('next-prayer');
         }
     }
 
-    // تشغيل التحديث كل ثانية
-    setInterval(updateTimeAndPrayers, 1000);
-    updateTimeAndPrayers();
+    // استدعاء جلب البيانات عند تشغيل الصفحة
+    getPrayerTimes();
 
     // عداد الأذكار التفاعلي
     function decreaseCounter(element, initialCount) {
@@ -362,7 +433,7 @@
         });
     }
 
-    // الأدعية المتغيرة
+    // الأدعية
     const prayersList = [
         `"اللهم إني أسألك علماً نافعاً، ورزقاً طيباً، وعملاً متقبلاً"`,
         `"رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الْآخِرَةِ حَسَنَةً وَقِنَا عَذَابَ النَّارِ"`,
@@ -381,4 +452,3 @@
 
 </body>
 </html>
-

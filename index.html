@@ -11,6 +11,7 @@
             --text-color: #2c3e50;
             --primary-color: #27ae60;
             --accent-color: #2980b9;
+            --next-prayer-color: #e67e22; /* لون مميز برتقالي للصلاة القادمة */
             --border-radius: 15px;
             --shadow: 0 4px 15px rgba(0,0,0,0.05);
         }
@@ -22,6 +23,7 @@
                 --text-color: #e1e1e6;
                 --primary-color: #2ec4b6;
                 --accent-color: #3a86ff;
+                --next-prayer-color: #f12711; /* لون مميز في الوضع الداكن */
                 --shadow: 0 4px 15px rgba(0,0,0,0.3);
             }
         }
@@ -33,11 +35,16 @@
             margin: 0;
             padding: 20px;
             transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            min-height: 95vh;
         }
 
         .container {
             max-width: 800px;
             margin: 0 auto;
+            flex: 1;
+            width: 100%;
         }
 
         header {
@@ -55,7 +62,6 @@
             opacity: 0.8;
         }
 
-        /* البطاقات العامة */
         .card {
             background-color: var(--card-bg);
             border-radius: var(--border-radius);
@@ -76,7 +82,7 @@
             align-items: center;
         }
 
-        /* قسم مواقيت الصلاة */
+        /* مواقيت الصلاة */
         .prayer-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
@@ -88,12 +94,21 @@
             padding: 10px;
             background-color: var(--bg-color);
             border-radius: 10px;
-            transition: transform 0.2s;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
         }
 
-        .prayer-item.active {
-            border: 2px solid var(--primary-color);
-            background-color: rgba(39, 174, 96, 0.1);
+        /* تمييز الصلاة القادمة تلقائياً */
+        .prayer-item.next-prayer {
+            border: 2px solid var(--next-prayer-color);
+            background-color: rgba(230, 126, 34, 0.15);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+            100% { transform: scale(1); }
         }
 
         .prayer-name {
@@ -101,12 +116,16 @@
             font-size: 0.95rem;
         }
 
+        .prayer-item.next-prayer .prayer-name {
+            color: var(--next-prayer-color);
+        }
+
         .prayer-time {
             font-size: 1.1rem;
             margin-top: 5px;
         }
 
-        /* قسم الأذكار */
+        /* الأذكار */
         .dhikr-container {
             display: flex;
             flex-direction: column;
@@ -126,7 +145,7 @@
         }
 
         .dhikr-item:hover {
-            background-color: rgba(0,0,0,0.02);
+            background-color: rgba(0, 0, 0, 0.02);
         }
 
         .dhikr-text {
@@ -145,7 +164,6 @@
             font-weight: bold;
             min-width: 70px;
             text-align: center;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
 
         .dhikr-item.completed {
@@ -155,7 +173,7 @@
             background-color: #95a5a6;
         }
 
-        /* قسم الدعاء */
+        /* الدعاء */
         .dua-box {
             text-align: center;
             padding: 15px;
@@ -179,8 +197,16 @@
             font-size: 0.9rem;
         }
 
-        .next-dua-btn:hover {
+        /* التوقيع أسفل الصفحة */
+        footer {
+            text-align: center;
+            padding: 20px 0;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--text-color);
             opacity: 0.9;
+            border-top: 1px solid rgba(0,0,0,0.05);
+            margin-top: 30px;
         }
     </style>
 </head>
@@ -192,37 +218,35 @@
         <div class="time-display" id="current-time">--:--:--</div>
     </header>
 
-    <!-- مواقيت الصلاة -->
     <section class="card">
         <div class="card-title">
-            <span>مواقيت الصلاة المتوقعة</span>
-            <span style="font-size: 0.8rem; font-weight: normal;">(تحديث تقريبي)</span>
+            <span>مواقيت الصلاة اليومية</span>
+            <span style="font-size: 0.8rem; font-weight: normal; color: var(--next-prayer-color);">● الصلاة القادمة محددة بلون مميز</span>
         </div>
         <div class="prayer-grid" id="prayer-timings">
-            <div class="prayer-item" id="fajr">
+            <div class="prayer-item" id="fajr" data-time="04:30">
                 <div class="prayer-name">الفجر</div>
-                <div class="prayer-time">04:30</div>
+                <div class="prayer-time">04:30 ص</div>
             </div>
-            <div class="prayer-item" id="dhuhr">
+            <div class="prayer-item" id="dhuhr" data-time="12:20">
                 <div class="prayer-name">الظهر</div>
-                <div class="prayer-time =">12:15</div>
+                <div class="prayer-time">12:20 م</div>
             </div>
-            <div class="prayer-item active" id="asr">
+            <div class="prayer-item" id="asr" data-time="15:45">
                 <div class="prayer-name">العصر</div>
-                <div class="prayer-time">15:40</div>
+                <div class="prayer-time">03:45 م</div>
             </div>
-            <div class="prayer-item" id="maghrib">
+            <div class="prayer-item" id="maghrib" data-time="18:50">
                 <div class="prayer-name">المغرب</div>
-                <div class="prayer-time">18:45</div>
+                <div class="prayer-time">06:50 م</div>
             </div>
-            <div class="prayer-item" id="isha">
+            <div class="prayer-item" id="isha" data-time="20:20">
                 <div class="prayer-name">العشاء</div>
-                <div class="prayer-time">20:15</div>
+                <div class="prayer-time">08:20 م</div>
             </div>
         </div>
     </section>
 
-    <!-- الأذكار التفاعلية -->
     <section class="card">
         <div class="card-title">
             <span>أذكار وتسابيح</span>
@@ -252,7 +276,6 @@
         </div>
     </section>
 
-    <!-- التذكير بالدعاء -->
     <section class="card">
         <div class="card-title">دعاء اليوم</div>
         <div class="dua-box">
@@ -262,17 +285,57 @@
     </section>
 </div>
 
+<footer>
+    لا تنسوني من الدعاء عباس كريمي -
+</footer>
+
 <script>
-    // تحديث الوقت الحالي
-    function updateTime() {
+    // تحديث الوقت وتحديد الصلاة القادمة تلقائياً
+    function updateTimeAndPrayers() {
         const now = new Date();
+        
+        // تحديث الساعة الرقمية في الأعلى
         const options = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true };
         document.getElementById('current-time').innerText = now.toLocaleTimeString('ar-EG', options);
-    }
-    setInterval(updateTime, 1000);
-    updateTime();
 
-    // تفاعل العدادات للأذكار
+        // الحصول على الوقت الحالي بالساعات والدقائق للمقارنة
+        const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+        // تعريف أوقات الصلوات بالدقائق منذ بداية اليوم
+        const prayers = [
+            { id: 'fajr', minutes: 4 * 60 + 30 },    // 04:30
+            { id: 'dhuhr', minutes: 12 * 60 + 20 },  // 12:20
+            { id: 'asr', minutes: 15 * 60 + 45 },    // 15:45
+            { id: 'maghrib', minutes: 18 * 60 + 50 },// 06:50
+            { id: 'isha', minutes: 20 * 60 + 20 }    // 08:20
+        ];
+
+        let nextPrayerId = 'fajr'; // الافتراضي صلاة الفجر لليوم التالي
+
+        // البحث عن الصلاة القادمة
+        for (let i = 0; i < prayers.length; i++) {
+            if (currentMinutes < prayers[i].minutes) {
+                nextPrayerId = prayers[i].id;
+                break;
+            }
+        }
+
+        // إزالة اللون المميز القديم وإضافته للصلاة القادمة الصحيحة
+        document.querySelectorAll('.prayer-item').forEach(item => {
+            item.classList.remove('next-prayer');
+        });
+        
+        const nextPrayerElement = document.getElementById(nextPrayerId);
+        if (nextPrayerElement) {
+            nextPrayerElement.classList.add('next-prayer');
+        }
+    }
+
+    // تشغيل التحديث كل ثانية
+    setInterval(updateTimeAndPrayers, 1000);
+    updateTimeAndPrayers();
+
+    // عداد الأذكار التفاعلي
     function decreaseCounter(element, initialCount) {
         const btn = element.querySelector('.counter-btn');
         let currentCount = parseInt(btn.innerText);
@@ -283,8 +346,7 @@
             
             if (currentCount === 0) {
                 element.classList.add('completed');
-                // تظليل خفيف عند الانتهاء
-                if (window.navigator.vibrate) window.navigator.vibrate(50); // اهتزاز بسيط للهواتف الذكية
+                if (window.navigator.vibrate) window.navigator.vibrate(50);
             }
         }
     }
@@ -294,15 +356,14 @@
         items.forEach(item => {
             item.classList.remove('completed');
             const btn = item.querySelector('.counter-btn');
-            // استرجاع العدد الأصلي المكتوب داخل الدالة في HTML
             const onclickAttr = item.getAttribute('onclick');
             const originalCount = onclickAttr.match(/\d+/)[0];
             btn.innerText = originalCount;
         });
     }
 
-    // مصفوفة الأدعية المتغيرة
-    const prayers = [
+    // الأدعية المتغيرة
+    const prayersList = [
         `"اللهم إني أسألك علماً نافعاً، ورزقاً طيباً، وعملاً متقبلاً"`,
         `"رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الْآخِرَةِ حَسَنَةً وَقِنَا عَذَابَ النَّارِ"`,
         `"يا حي يا قيوم برحمتك أستغيث أصلح لي شأني كله ولا تكلني إلى نفسي طرفة عين"`,
@@ -313,10 +374,11 @@
 
     let currentDuaIndex = 0;
     function nextDua() {
-        currentDuaIndex = (currentDuaIndex + 1) % prayers.length;
-        document.getElementById('dua-display').innerText = prayers[currentDuaIndex];
+        currentDuaIndex = (currentDuaIndex + 1) % prayersList.length;
+        document.getElementById('dua-display').innerText = prayersList[currentDuaIndex];
     }
 </script>
 
 </body>
 </html>
+
